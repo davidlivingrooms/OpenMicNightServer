@@ -14,5 +14,8 @@
     "morgan": "~1.5.3",
     "pg": "^4.4.0",
     "serve-favicon": "~2.2.1"
+  },
+  "devDependencies": {
+    "moment": "^2.10.6"
   }
 }
