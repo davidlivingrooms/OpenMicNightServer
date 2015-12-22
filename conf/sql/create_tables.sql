@@ -1,6 +1,6 @@
 
 CREATE TYPE weekday AS ENUM ('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday');
-CREATE TYPE regularity AS ENUM ('weekly', 'bi-Weekly', 'monthly');
+CREATE TYPE regularity AS ENUM ('weekly', 'bi-weekly', 'monthly');
 
 
 CREATE TABLE openmic (
