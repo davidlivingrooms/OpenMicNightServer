@@ -14,8 +14,6 @@ var connectionString = {
 };
 var db = pgp(connectionString);
 router.post('/api/openmic/save', function(req, res) {
-  var db = pgp(connectionString);
-
   var params = req.body;
   var data = {openmic_name: params.openMicName, openmic_weekday : params.openMicWeekDay,
     openmic_regularity : params.openMicRegularity, comedian: params.comedians, poet: params.poets, musician: params.musicians,
