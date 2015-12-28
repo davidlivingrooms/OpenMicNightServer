@@ -1,25 +1,21 @@
-
-CREATE TYPE weekday AS ENUM ('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday');
-CREATE TYPE regularity AS ENUM ('weekly', 'bi-weekly', 'monthly');
-
-
 CREATE TABLE openmic (
-  id            SERIAL PRIMARY KEY,
-  openmic_name      varchar(120),
+  id            SERIAL,
+  openmic_name      text,
   openmic_weekday   weekday not null,
   openmic_regularity   regularity not null,
   comedian      boolean not null,
   poet          boolean not null,
   musician      boolean not null,
-  contact_email_address   varchar(120),
-  contact_phone_number   varchar(20),
-  venue_name   varchar(120),
-  venue_address   varchar(120) not null,
-  state   varchar(60) not null,
-  city   varchar(120) not null,
-  sign_up_time   varchar(10) not null,
-  start_time   varchar(10) not null,
+  contact_email_address   text,
+  contact_phone_number   text,
+  venue_name   text,
+  venue_address   text not null,
+  state   text not null,
+  city   text not null,
+  sign_up_time   text not null,
+  start_time   text not null,
   is_free      boolean not null,
   next_openmic_date date not null,
-  notes   varchar(400)
+  notes   text,
+  PRIMARY KEY(venue_name, venue_address)
 );
