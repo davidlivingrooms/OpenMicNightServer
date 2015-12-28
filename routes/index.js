@@ -121,11 +121,11 @@ router.get('/api/openmic/listForCity', function(req, res) {
   for (var i = 0; i < 14; i ++) {
     var dbPromise = getOpenMicsForDate(data.city, dateMoment);//TODO handle async
     openMicsPromises.push(dbPromise);
-    dbPromise.then(function(data){
+    dbPromise.then(function(openMicResults){
         var dateSection = {
             date: dateMoment.format("dddd, MMMM Do YYYY"),
             id: dateMoment.unix(),
-            openmics: data
+            openmics: openMicResults
         };
         //dateSection.openmics = data;
         openmicsByDate.push(dateSection);
@@ -138,34 +138,16 @@ router.get('/api/openmic/listForCity', function(req, res) {
 });
 
 function getOpenMicsForDate(city, date) {
-  var selectOpenMicByCity = 'SELECT * FROM openmic WHERE city = $1';
-  //pg.connect(connectionString, function(err, client) {
-  //  var query = client.query(selectOpenMicByCity, [city]);
-  //  var results = [];
-  //  var openmicsInTown = [];
-  //  query.on('row', function(row) {
-  //    openmicsInTown.push(row);
-  //  });
-  //
-  //  query.on('end', function() {
-  //    client.end();
-  //    results = openmicsInTown.filter(function(openmic) {
-  //      return isOpenMicRelevantToDate(openmic, date);
-  //    });
-  //
-  //    return results;
-  //  });
-  //
-  //  if(err) {
-  //    console.log(err);
-  //  }
-  //});
+  var selectOpenMicByCity = 'SELECT * FROM openmic WHERE LOWER(city) = LOWER($1)';
+  return db.query(selectOpenMicByCity, city).then(function(openmicsInTown){
+      var openMicsForDate = openmicsInTown.filter(function(openmic) {
+          return isOpenMicRelevantToDate(openmic, date);
+      });
 
+      return openMicsForDate;
+  });
 
-  //db.query("select * from users where active=$1", true)
-      //var db = pgp(connectionString);
-
-    return db.query("select * from openmic");
+    //return db.query("select * from openmic");
 }
 
 module.exports = router;
