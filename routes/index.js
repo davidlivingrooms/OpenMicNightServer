@@ -1,16 +1,18 @@
 var express = require('express');
 var router = express.Router();
-var pgp = require('pg-promise');
 var moment = require('moment');
+var promise = require('bluebird');
+var options = {
+    promiseLib: promise
+};
+var pgp = require('pg-promise')(options);
 var connectionString = {
-    host: 'localhost', // server name or IP address;
+    host: 'localhost',
     port: 5432,
     database: 'openmicnight',
     user: 'openmicer',
-    //password: 'user_password'
 };
 var db = pgp(connectionString);
-var db = db(connectionString);
 router.post('/api/openmic/save', function(req, res) {
   var db = pgp(connectionString);
 
@@ -41,42 +43,12 @@ router.post('/api/openmic/save', function(req, res) {
   res.json({ title: 'some open mic' });
 });
 
-function isOpenMicBetweenTime(openmic, start, end) {
-  //var dateMoment = moment(date);
-  //var sunday = dateMoment.day(0);
-  //var saturday = dateMoment.day(6);
-  var nextOpenmicDay = moment(openmic.next_openmic_day);
-  var regularity = openmic.openmic_regularity;
-  var runningDate = nextOpenmicDay;
-  while(runningDate.isBefore(end)) {
-    if (runningDate.isBetween(start, end)){
-      return true;
-    }
-
-    switch (regularity) {
-      case "weekly":
-        runningDate = runningDate.add(7, 'days');
-        break;
-      case "bi-weekly":
-        runningDate = runningDate.add(14, 'days');
-        break;
-      case "monthly":
-        runningDate = runningDate.add(1, 'months');
-        break;
-      default:
-        console.log("Unrecognized openmic regularity found.");
-    }
-  }
-
-  return false;
-}
-
 function isOpenMicRelevantToDate(openmic, date) {
   var dateMoment = moment(date);
-  var runningDate = moment(openmic.next_openmic_day);
+  var runningDate = moment(openmic.next_openmic_date);
   var regularity = openmic.openmic_regularity;
   while(runningDate.isBefore(dateMoment)) {
-    if (runningDate.isSame(dateMoment)){
+    if (runningDate.isSame(dateMoment, 'day')){
       return true;
     }
 
@@ -84,7 +56,7 @@ function isOpenMicRelevantToDate(openmic, date) {
       case "weekly":
         runningDate.add(7, 'days');
         break;
-      case "bi-weekly":
+      case "biweekly":
         runningDate.add(14, 'days');
         break;
       case "monthly":
@@ -98,28 +70,14 @@ function isOpenMicRelevantToDate(openmic, date) {
   return false;
 }
 
-function createOpenMicObjectFromRow(openMicRow) {
-
-}
-
-function createDateSectionObject(city, date) {
-  return {
-    date: date,
-    id: date,//TODO change to epoch
-    openmics: getOpenMicsForDate(city, date)//TODO this is async
-  };
-}
-
-
 router.get('/api/openmic/listForCity', function(req, res) {
   var params = req.query;
   var data = {city: params.city, date: moment()};
   var dateMoment = moment(data.date);
   var openmicsByDate = [];
   var openMicsPromises = [];
-//TODO don't skip today
   for (var i = 0; i < 14; i ++) {
-    var dbPromise = getOpenMicsForDate(data.city, dateMoment);//TODO handle async
+    var dbPromise = getOpenMicsForDate(data.city, dateMoment);
     openMicsPromises.push(dbPromise);
     dbPromise.then(function(openMicResults){
         var dateSection = {
@@ -127,7 +85,6 @@ router.get('/api/openmic/listForCity', function(req, res) {
             id: dateMoment.unix(),
             openmics: openMicResults
         };
-        //dateSection.openmics = data;
         openmicsByDate.push(dateSection);
         dateMoment.add(1, 'days');
     });
@@ -146,8 +103,6 @@ function getOpenMicsForDate(city, date) {
 
       return openMicsForDate;
   });
-
-    //return db.query("select * from openmic");
 }
 
 module.exports = router;
