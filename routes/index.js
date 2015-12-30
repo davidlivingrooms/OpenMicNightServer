@@ -68,26 +68,52 @@ function isOpenMicRelevantToDate(openmic, date) {
   return false;
 }
 
+function compareMoments(result1, result2) {
+    var moment1 = moment(result1.dateMoment);
+    var moment2 = moment(result2.dateMoment);
+    if (moment1.isBefore(moment2)) {
+        return -1;
+    }
+    if (moment1.isAfter(moment2)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 router.get('/api/openmic/listForCity', function(req, res) {
-  var params = req.query;
-  var data = {city: params.city, date: moment()};
-  var dateMoment = moment(data.date);
-  var openmicsByDate = [];
-  var openMicsPromises = [];
-  for (var i = 0; i < 14; i ++) {
-    var dbPromise = getOpenMicsForDate(data.city, dateMoment);
-    openMicsPromises.push(dbPromise);
-    dbPromise.then(function(openMicResults){
-        var dateSection = {
-            date: dateMoment.format("dddd, MMMM Do YYYY"),
-            id: dateMoment.unix(),
-            openmics: openMicResults
-        };
-        openmicsByDate.push(dateSection);
+    var params = req.query;
+    var data = {city: params.city, date: moment()};
+    var originalDateMoment = moment(data.date);
+    var dateMoment = originalDateMoment.clone();
+    var openmicsByDate = [];
+    var openMicsPromises = [];
+
+    var createOpenMicPromise = function(openmicPromises, openmicsByDate, data, dateMoment){
+        var _this = this;
+        _this.dateMomentClone = dateMoment.clone();
+        var dbPromise = getOpenMicsForDate(data.city, _this.dateMomentClone);
+        openMicsPromises.push(dbPromise);
+        dbPromise.then(function(openMicResults){
+            var dateSection = {
+                dateMoment: _this.dateMomentClone,
+                date: _this.dateMomentClone.format("dddd, MMMM Do YYYY"),
+                id: _this.dateMomentClone.unix(),
+                openmics: openMicResults
+            };
+            openmicsByDate.push(dateSection);
+        });
+
         dateMoment.add(1, 'days');
-    });
-  }
-    Promise.all(openMicsPromises).then(function(){
+    };
+
+    for (var i = 0; i < 14; i ++) {
+        var boundClosure = createOpenMicPromise.bind({});
+            boundClosure(openMicsPromises, openmicsByDate, data, dateMoment);
+    }
+
+    Promise.all(openMicsPromises).then(function() {
+        openmicsByDate.sort(compareMoments);
         return res.json(openmicsByDate);
     });
 });
