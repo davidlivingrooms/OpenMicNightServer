@@ -17,5 +17,6 @@ CREATE TABLE openmic (
   is_free      boolean not null,
   next_openmic_date date not null,
   notes   text,
-  PRIMARY KEY(venue_name, venue_address)
+  website text,
+  PRIMARY KEY(openmic_name, venue_name, venue_address, openmic_weekday)
 );
