@@ -5,6 +5,7 @@ var promise = require('bluebird');
 var options = {
     promiseLib: promise
 };
+
 var pgp = require('pg-promise')(options);
 var connectionString = {
     host: 'localhost',
@@ -12,7 +13,9 @@ var connectionString = {
     database: 'openmicnight',
     user: 'openmicer',
 };
+
 var db = pgp(connectionString);
+
 router.post('/api/openmic/save', function(req, res) {
   var params = req.body;
   var data = {openmic_name: params.openMicName, openmic_weekday : params.openMicWeekDay,
@@ -27,18 +30,35 @@ router.post('/api/openmic/save', function(req, res) {
     'start_time, is_free, next_openmic_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
     '$14, $15, $16, $17)';
 
-  db.connect(connectionString, function(err, client) {
-    client.query(insertOpenMicStatement, [data.openmic_name, data.openmic_weekday, data.openmic_regularity,
-                                          data.comedian, data.poet, data.musician, data.contact_email_address,
-                                          data.contact_phone_number, data.venue_name, data.venue_address, data.state,
-                                          data.city, data.sign_up_time, data.start_time, data.is_free,
-                                          data.next_openmic_day, data.notes]);
-    if(err) {
-      console.log(err);
-    }
-  });
+    db.none(insertOpenMicStatement, [data.openmic_name, data.openmic_weekday, data.openmic_regularity,
+            data.comedian, data.poet, data.musician, data.contact_email_address,
+            data.contact_phone_number, data.venue_name, data.venue_address, data.state,
+            data.city, data.sign_up_time, data.start_time, data.is_free,
+            data.next_openmic_day, data.notes])
+        .then(function () {
+            console.log('success!')
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 
   res.json({ title: 'some open mic' });
+});
+
+router.post('/api/openmic/flagForDeletion', function(req, res) {
+    var params = req.body;
+    var reason = params.reason;
+    var flagOpenMicForDeletionStatement = 'UPDATE openmic SET deletionRequestsNum = deletionRequestsNum + 1, ' +
+        'deletionRequestReasons = array_append(deletionRequestReasons, ' + reason + ')';
+
+    db.connect(connectionString, function(err, client) {
+        client.query(flagOpenMicForDeletionStatement, reason);
+        if(err) {
+            console.log(err);
+        }
+    });
+
+    res.json({'title': 'flagged this open mic for deletion'});
 });
 
 function isOpenMicRelevantToDate(openmic, date) {
@@ -54,7 +74,7 @@ function isOpenMicRelevantToDate(openmic, date) {
       case "weekly":
         runningDate.add(7, 'days');
         break;
-      case "biweekly":
+      case "bi-weekly":
         runningDate.add(14, 'days');
         break;
       case "monthly":
