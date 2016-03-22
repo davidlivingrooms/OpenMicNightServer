@@ -21,7 +21,6 @@ CREATE TABLE openmic (
   next_openmic_date date not null,
   notes   text,
   website text,
-  deletionRequestsNum integer not null default 0,
   deletionRequestReasons text[],
   PRIMARY KEY(openmic_name, venue_name, venue_address, openmic_weekday)
 );
