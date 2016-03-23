@@ -77,16 +77,16 @@ router.post('/api/openmic/update', function(req, res) {
 
 router.post('/api/openmic/flagForDeletion', function(req, res) {
     var params = req.body;
-    var reason = params.reason;
-    var flagOpenMicForDeletionStatement = 'UPDATE openmic SET deletionRequestsNum = deletionRequestsNum + 1, ' +
-        'deletionRequestReasons = array_append(deletionRequestReasons, ' + reason + ')';
+    var flagOpenMicForDeletionStatement = 'UPDATE openmic SET deletion_requests = deletion_requests + 1 ' +
+        'WHERE id = $1';
 
-    db.connect(connectionString, function(err, client) {
-        client.query(flagOpenMicForDeletionStatement, reason);
-        if(err) {
-            console.log(err);
-        }
-    });
+    db.none(flagOpenMicForDeletionStatement, [params.id])
+        .then(function () {
+            console.log('success!')
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 
     res.json({'title': 'flagged this open mic for deletion'});
 });
