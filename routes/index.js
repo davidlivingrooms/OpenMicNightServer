@@ -110,6 +110,13 @@ function isOpenMicRelevantToDate(openmic, date) {
   var dateMoment = moment(date);
   var runningDate = moment(openmic.next_openmic_date);
   var regularity = openmic.regularity;
+  if (regularity === 'weekly') {
+      var weekday = date.format('dddd').toLowerCase();
+      if (openmic[weekday] && (dateMoment.isAfter(runningDate, 'day') || dateMoment.isSame(runningDate, 'day'))) {
+          return true;
+      }
+  }
+
   while(runningDate.isBefore(dateMoment)) {
     if (runningDate.isSame(dateMoment, 'day')){
       return true;
