@@ -19,23 +19,31 @@ var db = pgp(connectionString);
 router.post('/api/openmic/save', function(req, res) {
 //TODO don't save if this openmic already exists
   var params = req.body;
-  var data = {name: params.openMicName, weekdays : params.openMicWeekDays,
+  var data = {name: params.openMicName, weekday : params.openMicWeekDay,
     regularity : params.openMicRegularity, comedian: params.comedians, poet: params.poets, musician: params.musicians,
     contact_email_address: params.contactEmailAddress, contact_phone_number: params.contactPhoneNumber,
     venue_name: params.venueName, venue_address: params.venueAddress, state: params.state, city: params.city,
     sign_up_time: params.signUpTime, start_time: params.startTime, is_free: params.isOpenMicFree,
-    next_openmic_day: params.nextOpenMicDate, notes: params.notes};
+    next_openmic_day: params.nextOpenMicDate, notes: params.notes, monday: params.monday,
+    tuesday: params.tuesday, wednesday: params.wednesday, thursday: params.thursday,
+    friday: params.friday, saturday: params.saturday, sunday: params.sunday};
 
-  var insertOpenMicStatement = 'INSERT INTO openmic(name, weekdays, regularity, comedian, poet, ' +
+    if (data.weekday) {
+        data[data.weekday] = true;
+    }
+
+    data.regularity = data.regularity.replace('-', '');
+
+    var insertOpenMicStatement = 'INSERT INTO openmic(name, regularity, comedian, poet, ' +
     'musician, contact_email_address, contact_phone_number, venue_name, venue_address, state, city, sign_up_time, ' +
-    'start_time, is_free, next_openmic_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
-    '$14, $15, $16, $17)';
+    'start_time, is_free, next_openmic_date, notes, monday, tuesday, wednesday, thursday, friday, saturday, sunday) ' +
+    'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)';
 
-    db.none(insertOpenMicStatement, [data.name, data.weekdays, data.regularity,
-            data.comedian, data.poet, data.musician, data.contact_email_address,
-            data.contact_phone_number, data.venue_name, data.venue_address, data.state,
-            data.city, data.sign_up_time, data.start_time, data.is_free,
-            data.next_openmic_day, data.notes])
+    db.none(insertOpenMicStatement, [data.name, data.regularity, data.comedian, data.poet, data.musician,
+                                    data.contact_email_address, data.contact_phone_number, data.venue_name,
+                                    data.venue_address, data.state, data.city, data.sign_up_time, data.start_time,
+                                    data.is_free, data.next_openmic_day, data.notes, data.monday, data.tuesday,
+                                    data.wednesday, data.thursday, data.friday, data.saturday, data.sunday])
         .then(function () {
             console.log('success!')
         })
