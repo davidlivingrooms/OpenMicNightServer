@@ -19,19 +19,19 @@ var db = pgp(connectionString);
 router.post('/api/openmic/save', function(req, res) {
 //TODO don't save if this openmic already exists
   var params = req.body;
-  var data = {openmic_name: params.openMicName, openmic_weekday : params.openMicWeekDay,
-    openmic_regularity : params.openMicRegularity, comedian: params.comedians, poet: params.poets, musician: params.musicians,
+  var data = {name: params.openMicName, weekdays : params.openMicWeekDays,
+    regularity : params.openMicRegularity, comedian: params.comedians, poet: params.poets, musician: params.musicians,
     contact_email_address: params.contactEmailAddress, contact_phone_number: params.contactPhoneNumber,
     venue_name: params.venueName, venue_address: params.venueAddress, state: params.state, city: params.city,
     sign_up_time: params.signUpTime, start_time: params.startTime, is_free: params.isOpenMicFree,
     next_openmic_day: params.nextOpenMicDate, notes: params.notes};
 
-  var insertOpenMicStatement = 'INSERT INTO openmic(openmic_name, openmic_weekday, openmic_regularity, comedian, poet, ' +
+  var insertOpenMicStatement = 'INSERT INTO openmic(name, weekdays, regularity, comedian, poet, ' +
     'musician, contact_email_address, contact_phone_number, venue_name, venue_address, state, city, sign_up_time, ' +
     'start_time, is_free, next_openmic_date, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
     '$14, $15, $16, $17)';
 
-    db.none(insertOpenMicStatement, [data.openmic_name, data.openmic_weekday, data.openmic_regularity,
+    db.none(insertOpenMicStatement, [data.name, data.weekdays, data.regularity,
             data.comedian, data.poet, data.musician, data.contact_email_address,
             data.contact_phone_number, data.venue_name, data.venue_address, data.state,
             data.city, data.sign_up_time, data.start_time, data.is_free,
@@ -48,23 +48,38 @@ router.post('/api/openmic/save', function(req, res) {
 
 router.post('/api/openmic/update', function(req, res) {
     var params = req.body;
-    var data = {openmic_name: params.openmic.openMicName, openmic_weekday : params.openmic.openMicWeekDay,
-        openmic_regularity : params.openmic.openMicRegularity, comedian: params.openmic.comedians, poet: params.openmic.poets, musician: params.openmic.musicians,
+    var data = {name: params.openmic.openMicName, weekday : params.openmic.openMicWeekDay,
+        regularity : params.openmic.openMicRegularity, comedian: params.openmic.comedians, poet: params.openmic.poets, musician: params.openmic.musicians,
         contact_email_address: params.openmic.contactEmailAddress, contact_phone_number: params.openmic.contactPhoneNumber,
         venue_name: params.openmic.venueName, venue_address: params.openmic.venueAddress, state: params.openmic.state, city: params.openmic.city,
         sign_up_time: params.openmic.signUpTime, start_time: params.openmic.startTime, is_free: params.openmic.isOpenMicFree,
-        next_openmic_day: params.openmic.nextOpenMicDate, notes: params.openmic.otherNotes, id: params.id};
+        next_openmic_day: params.openmic.nextOpenMicDate, notes: params.openmic.otherNotes, monday: params.openmic.monday,
+        tuesday: params.openmic.tuesday, wednesday: params.openmic.wednesday, thursday: params.openmic.thursday,
+        friday: params.openmic.friday, saturday: params.openmic.saturday, sunday: params.openmic.sunday, id: params.id};
 
-    var updateOpenMicStatement = 'UPDATE openmic SET (openmic_name, openmic_weekday, openmic_regularity, comedian, poet, ' +
+    if (data.weekday) {
+        data[data.weekday] = true;
+    }
+
+    data.regularity = data.regularity.replace('-', '');
+
+    for (var key in data) {
+        if (data.hasOwnProperty(key) && typeof data[key] === 'undefined') {
+            data[key] = false;
+        }
+    }
+
+    var updateOpenMicStatement = 'UPDATE openmic SET (name, regularity, comedian, poet, ' +
         'musician, contact_email_address, contact_phone_number, venue_name, venue_address, state, city, sign_up_time, ' +
-        'start_time, is_free, next_openmic_date, notes) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
-        '$14, $15, $16, $17) WHERE id = $18';
+        'start_time, is_free, next_openmic_date, notes, monday, tuesday, wednesday, thursday, friday, saturday, sunday) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
+        '$14, $15, $16, $17, $18, $19, $20, $21, $22, $23) WHERE id = $24';
 
-    db.none(updateOpenMicStatement, [data.openmic_name, data.openmic_weekday, data.openmic_regularity,
+    db.none(updateOpenMicStatement, [data.name, data.regularity,
             data.comedian, data.poet, data.musician, data.contact_email_address,
             data.contact_phone_number, data.venue_name, data.venue_address, data.state,
             data.city, data.sign_up_time, data.start_time, data.is_free,
-            new Date(data.next_openmic_day), data.notes, data.id])
+            new Date(data.next_openmic_day), data.notes, data.monday, data.tuesday,
+            data.wednesday, data.thursday, data.friday, data.saturday, data.sunday, data.id])
         .then(function () {
             console.log('success!')
         })
@@ -94,7 +109,7 @@ router.post('/api/openmic/flagForDeletion', function(req, res) {
 function isOpenMicRelevantToDate(openmic, date) {
   var dateMoment = moment(date);
   var runningDate = moment(openmic.next_openmic_date);
-  var regularity = openmic.openmic_regularity;
+  var regularity = openmic.regularity;
   while(runningDate.isBefore(dateMoment)) {
     if (runningDate.isSame(dateMoment, 'day')){
       return true;
@@ -105,6 +120,7 @@ function isOpenMicRelevantToDate(openmic, date) {
         runningDate.add(7, 'days');
         break;
       case "bi-weekly":
+      case "biweekly":
         runningDate.add(14, 'days');
         break;
       case "monthly":
