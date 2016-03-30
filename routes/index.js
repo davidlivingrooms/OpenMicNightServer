@@ -201,10 +201,19 @@ router.get('/api/openmic/listForCity', function(req, res) {
 
 function getOpenMicsForDate(city, date) {
   var selectOpenMicByCity = 'SELECT * FROM openmic WHERE LOWER(city) = LOWER($1)';
-  return db.query(selectOpenMicByCity, city).then(function(openmicsInTown){
+  var updateNextOpenMicDate = 'UPDATE openmic SET next_openmic_date = $1 WHERE id = $2';
+
+    return db.query(selectOpenMicByCity, city).then(function(openmicsInTown){
       var openMicsForDate = openmicsInTown.filter(function(openmic) {
           return isOpenMicRelevantToDate(openmic, date);
       });
+
+      var iscurrentDate = date.isSame(new Date(), "day");
+      if (openMicsForDate.length && iscurrentDate) {
+          openMicsForDate.forEach(function(openmic){
+              db.none(updateNextOpenMicDate, [date, openmic.id]);
+          });
+      }
 
       return openMicsForDate;
   });
