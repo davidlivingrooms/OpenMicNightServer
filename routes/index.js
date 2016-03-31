@@ -211,7 +211,7 @@ function getOpenMicsForDate(city, state, date) {
       var iscurrentDate = date.isSame(new Date(), "day");
       if (openMicsForDate.length && iscurrentDate) {
           openMicsForDate.forEach(function(openmic){
-              db.none(updateNextOpenMicDate, [date, openmic.id]);
+              db.none(updateNextOpenMicDate, [date.startOf('day'), openmic.id]);
           });
       }
 
