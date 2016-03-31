@@ -164,7 +164,7 @@ function compareMoments(result1, result2) {
 
 router.get('/api/openmic/listForCity', function(req, res) {
     var params = req.query;
-    var data = {city: params.city, date: moment()};
+    var data = {city: params.city, state: params.state, date: moment()};
     var originalDateMoment = moment(data.date);
     var dateMoment = originalDateMoment.clone();
     var openmicsByDate = [];
@@ -173,7 +173,7 @@ router.get('/api/openmic/listForCity', function(req, res) {
     var createOpenMicPromise = function(openmicPromises, openmicsByDate, data, dateMoment){
         var _this = this;
         _this.dateMomentClone = dateMoment.clone();
-        var dbPromise = getOpenMicsForDate(data.city, _this.dateMomentClone);
+        var dbPromise = getOpenMicsForDate(data.city, data.state, _this.dateMomentClone);
         openMicsPromises.push(dbPromise);
         dbPromise.then(function(openMicResults){
             var dateSection = {
@@ -199,11 +199,11 @@ router.get('/api/openmic/listForCity', function(req, res) {
     });
 });
 
-function getOpenMicsForDate(city, date) {
-  var selectOpenMicByCity = 'SELECT * FROM openmic WHERE LOWER(city) = LOWER($1)';
+function getOpenMicsForDate(city, state, date) {
+  var selectOpenMicByCity = 'SELECT * FROM openmic WHERE LOWER(city) = LOWER($1) AND state = $2';
   var updateNextOpenMicDate = 'UPDATE openmic SET next_openmic_date = $1 WHERE id = $2';
 
-    return db.query(selectOpenMicByCity, city).then(function(openmicsInTown){
+    return db.query(selectOpenMicByCity, [city, abbrState(state, 'abbr')]).then(function(openmicsInTown){
       var openMicsForDate = openmicsInTown.filter(function(openmic) {
           return isOpenMicRelevantToDate(openmic, date);
       });
@@ -217,6 +217,79 @@ function getOpenMicsForDate(city, date) {
 
       return openMicsForDate;
   });
+}
+
+function abbrState(input, to){
+
+    var states = [
+        ['Alabama', 'AL'],
+        ['Alaska', 'AK'],
+        ['Arizona', 'AZ'],
+        ['Arkansas', 'AR'],
+        ['California', 'CA'],
+        ['Colorado', 'CO'],
+        ['Connecticut', 'CT'],
+        ['Delaware', 'DE'],
+        ['Florida', 'FL'],
+        ['Georgia', 'GA'],
+        ['Hawaii', 'HI'],
+        ['Idaho', 'ID'],
+        ['Illinois', 'IL'],
+        ['Indiana', 'IN'],
+        ['Iowa', 'IA'],
+        ['Kansas', 'KS'],
+        ['Kentucky', 'KY'],
+        ['Kentucky', 'KY'],
+        ['Louisiana', 'LA'],
+        ['Maine', 'ME'],
+        ['Maryland', 'MD'],
+        ['Massachusetts', 'MA'],
+        ['Michigan', 'MI'],
+        ['Minnesota', 'MN'],
+        ['Mississippi', 'MS'],
+        ['Missouri', 'MO'],
+        ['Montana', 'MT'],
+        ['Nebraska', 'NE'],
+        ['Nevada', 'NV'],
+        ['New Hampshire', 'NH'],
+        ['New Jersey', 'NJ'],
+        ['New Mexico', 'NM'],
+        ['New York', 'NY'],
+        ['North Carolina', 'NC'],
+        ['North Dakota', 'ND'],
+        ['Ohio', 'OH'],
+        ['Oklahoma', 'OK'],
+        ['Oregon', 'OR'],
+        ['Pennsylvania', 'PA'],
+        ['Rhode Island', 'RI'],
+        ['South Carolina', 'SC'],
+        ['South Dakota', 'SD'],
+        ['Tennessee', 'TN'],
+        ['Texas', 'TX'],
+        ['Utah', 'UT'],
+        ['Vermont', 'VT'],
+        ['Virginia', 'VA'],
+        ['Washington', 'WA'],
+        ['West Virginia', 'WV'],
+        ['Wisconsin', 'WI'],
+        ['Wyoming', 'WY'],
+    ];
+
+    if (to === 'abbr'){
+        input = input.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+        for(i = 0; i < states.length; i++){
+            if(states[i][0] == input){
+                return(states[i][1]);
+            }
+        }
+    } else if (to === 'name'){
+        input = input.toUpperCase();
+        for(i = 0; i < states.length; i++){
+            if(states[i][1] == input){
+                return(states[i][0]);
+            }
+        }
+    }
 }
 
 module.exports = router;
