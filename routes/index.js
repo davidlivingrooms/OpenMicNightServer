@@ -9,7 +9,7 @@ var options = {
 var pgp = require('pg-promise')(options);
 var connectionString = {
     //host: 'localhost',
-    host: process.env.DATABASE_URL,
+    //host: process.env.DATABASE_URL,
     port: 5432,
     database: 'openmicnight',
     user: 'openmicer'
@@ -42,10 +42,12 @@ router.post('/api/openmic/save', function(req, res) {
     'start_time, is_free, next_openmic_date, notes, monday, tuesday, wednesday, thursday, friday, saturday, sunday) ' +
     'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)';
 
+    var nextOpenMicDate = new Date(moment(params.nextOpenMicDate).utc().format());
+
     db.none(insertOpenMicStatement, [data.name, data.regularity, data.comedian, data.poet, data.musician,
                                     data.contact_email_address, data.contact_phone_number, data.venue_name,
                                     data.venue_address, data.state, data.city, data.sign_up_time, data.start_time,
-                                    data.is_free, data.next_openmic_day, data.notes, data.monday, data.tuesday,
+                                    data.is_free, nextOpenMicDate, data.notes, data.monday, data.tuesday,
                                     data.wednesday, data.thursday, data.friday, data.saturday, data.sunday])
         .then(function () {
             console.log('success!')
@@ -118,8 +120,8 @@ router.post('/api/openmic/flagForDeletion', function(req, res) {
 });
 
 function isOpenMicRelevantToDate(openmic, date) {
-  var dateMoment = moment(date);
-  var runningDate = moment(openmic.next_openmic_date);
+  var dateMoment = moment(date).utc();
+  var runningDate = moment(openmic.next_openmic_date).utc();
   var regularity = openmic.regularity;
   if (regularity === 'weekly') {
       var weekday = date.format('dddd').toLowerCase();
@@ -153,8 +155,8 @@ function isOpenMicRelevantToDate(openmic, date) {
 }
 
 function compareMoments(result1, result2) {
-    var moment1 = moment(result1.dateMoment);
-    var moment2 = moment(result2.dateMoment);
+    var moment1 = moment(result1.dateMoment).utc();
+    var moment2 = moment(result2.dateMoment).utc();
     if (moment1.isBefore(moment2)) {
         return -1;
     }
@@ -167,15 +169,15 @@ function compareMoments(result1, result2) {
 
 router.get('/api/openmic/listForCity', function(req, res) {
     var params = req.query;
-    var data = {city: params.city, state: params.state, date: moment()};
-    var originalDateMoment = moment(data.date);
-    var dateMoment = originalDateMoment.clone();
+    var data = {city: params.city, state: params.state};
+    var originalDateMoment = moment().utc();
+    var dateMoment = originalDateMoment.clone().utc();
     var openmicsByDate = [];
     var openMicsPromises = [];
 
     var createOpenMicPromise = function(openmicPromises, openmicsByDate, data, dateMoment){
         var _this = this;
-        _this.dateMomentClone = dateMoment.clone();
+        _this.dateMomentClone = dateMoment.clone().utc();
         var dbPromise = getOpenMicsForDate(data.city, data.state, _this.dateMomentClone);
         openMicsPromises.push(dbPromise);
         dbPromise.then(function(openMicResults){
