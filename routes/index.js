@@ -8,10 +8,11 @@ var options = {
 
 var pgp = require('pg-promise')(options);
 var connectionString = {
-    host: 'localhost',
+    //host: 'localhost',
+    host: process.env.DATABASE_URL,
     port: 5432,
     database: 'openmicnight',
-    user: 'openmicer',
+    user: 'openmicer'
 };
 
 var db = pgp(connectionString);
