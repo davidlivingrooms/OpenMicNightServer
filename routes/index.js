@@ -15,7 +15,9 @@ var connectionString = {
     user: 'openmicer'
 };
 
-var db = pgp(connectionString);
+//var db = pgp(connectionString);
+var db = pgp(process.env.DATABASE_URL);
+
 
 router.post('/api/openmic/save', function(req, res) {
 //TODO don't save if this openmic already exists
