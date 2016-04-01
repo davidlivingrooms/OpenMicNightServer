@@ -13,9 +13,7 @@
     "jade": "~1.9.2",
     "morgan": "~1.5.3",
     "pg-promise": "^2.7.1",
-    "serve-favicon": "~2.2.1"
-  },
-  "devDependencies": {
+    "serve-favicon": "~2.2.1",
     "bluebird": "^3.1.1",
     "moment": "^2.10.6"
   }
