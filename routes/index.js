@@ -1,23 +1,21 @@
 var express = require('express');
 var router = express.Router();
 var moment = require('moment');
-var promise = require('bluebird');
-var options = {
-    promiseLib: promise
-};
+const { Client } = require('pg')
 
-var pgp = require('pg-promise')(options);
-var connectionString = {
-    //host: 'localhost',
-    //host: process.env.DATABASE_URL,
-    port: 5432,
-    database: 'openmicnight',
-    user: 'openmicer'
-};
-
-//var db = pgp(connectionString);
-var db = pgp(process.env.DATABASE_URL);
-
+const db = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false,
+    },
+})
+db.connect()
+    .then(function (obj) {
+        console.log('connected successfully')
+    })
+    .catch(function (error) {
+        console.log("ERROR:", error.message);
+    });
 
 router.post('/api/openmic/save', function(req, res) {
 //TODO don't save if this openmic already exists
@@ -44,7 +42,7 @@ router.post('/api/openmic/save', function(req, res) {
 
     var nextOpenMicDate = new Date(moment(params.nextOpenMicDate).utc().format());
 
-    db.none(insertOpenMicStatement, [data.name, data.regularity, data.comedian, data.poet, data.musician,
+    db.query(insertOpenMicStatement, [data.name, data.regularity, data.comedian, data.poet, data.musician,
                                     data.contact_email_address, data.contact_phone_number, data.venue_name,
                                     data.venue_address, data.state, data.city, data.sign_up_time, data.start_time,
                                     data.is_free, nextOpenMicDate, data.notes, data.monday, data.tuesday,
@@ -87,7 +85,7 @@ router.post('/api/openmic/update', function(req, res) {
         'start_time, is_free, next_openmic_date, notes, monday, tuesday, wednesday, thursday, friday, saturday, sunday) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, ' +
         '$14, $15, $16, $17, $18, $19, $20, $21, $22, $23) WHERE id = $24';
 
-    db.none(updateOpenMicStatement, [data.name, data.regularity,
+    db.query(updateOpenMicStatement, [data.name, data.regularity,
             data.comedian, data.poet, data.musician, data.contact_email_address,
             data.contact_phone_number, data.venue_name, data.venue_address, data.state,
             data.city, data.sign_up_time, data.start_time, data.is_free,
@@ -108,7 +106,7 @@ router.post('/api/openmic/flagForDeletion', function(req, res) {
     var flagOpenMicForDeletionStatement = 'UPDATE openmic SET deletion_requests = deletion_requests + 1 ' +
         'WHERE id = $1';
 
-    db.none(flagOpenMicForDeletionStatement, [params.id])
+    db.query(flagOpenMicForDeletionStatement, [params.id])
         .then(function () {
             console.log('success!')
         })
@@ -209,14 +207,14 @@ function getOpenMicsForDate(city, state, date) {
   var updateNextOpenMicDate = 'UPDATE openmic SET next_openmic_date = $1 WHERE id = $2';
 
     return db.query(selectOpenMicByCity, [city, abbrState(state, 'abbr')]).then(function(openmicsInTown){
-      var openMicsForDate = openmicsInTown.filter(function(openmic) {
+      var openMicsForDate = openmicsInTown.rows.filter(function(openmic) {
           return isOpenMicRelevantToDate(openmic, date);
       });
 
       var iscurrentDate = date.isSame(new Date(), "day");
       if (openMicsForDate.length && iscurrentDate) {
           openMicsForDate.forEach(function(openmic){
-              db.none(updateNextOpenMicDate, [date.startOf('day'), openmic.id]);
+              db.query(updateNextOpenMicDate, [date.startOf('day'), openmic.id]);
           });
       }
 
